@@ -16,7 +16,7 @@
             font-family: Arial, sans-serif;
             overflow: hidden; /* Prevent scrolling */
         }
-        #welcome, #game, #result {
+        #welcome, #game, #result, #countdown {
             text-align: center;
             width: 100%;
             height: 100%;
@@ -58,14 +58,38 @@
             font-size: 32px;
             margin-bottom: 10px;
         }
+        #countdown {
+            font-size: 100px;
+            color: black;
+        }
+        .return-button {
+            background-color: black;
+            color: white;
+            padding: 10px 20px;
+            font-size: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            border: none;
+            border-radius: 10px;
+        }
+        .fade {
+            animation: fadeout 1s forwards;
+        }
+        @keyframes fadeout {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
 <!-- Welcome Screen -->
 <div id="welcome">
-    <button class="play-button" onclick="startGame()">Play Game</button>
+    <button class="play-button" onclick="startCountdown()">Aim Trainer</button>
 </div>
+
+<!-- Countdown Screen -->
+<div id="countdown"></div>
 
 <!-- Game Screen -->
 <div id="game">
@@ -75,17 +99,47 @@
 <!-- Result Screen -->
 <div id="result">
     <b id="resultMessage"></b><br>
-    <span id="timeTaken"></span>
+    <span id="timeTaken"></span><br>
+    <button class="return-button" onclick="returnToHome()">Return to Home</button>
 </div>
 
 <script>
     let clicks = 0;
     let startTime;
 
-    function startGame() {
-        // Hide the welcome screen and show the game screen
+    function startCountdown() {
+        // Hide the welcome screen and show the countdown screen
         document.getElementById('welcome').style.visibility = 'hidden';
         document.getElementById('welcome').style.pointerEvents = 'none';
+        document.getElementById('countdown').style.visibility = 'visible';
+        document.getElementById('countdown').style.pointerEvents = 'auto';
+
+        let countdownNumbers = [3, 2, 1, "Go"];
+        let currentIndex = 0;
+
+        function displayNextNumber() {
+            if (currentIndex >= countdownNumbers.length) {
+                startGame(); // Start the game after the countdown
+                return;
+            }
+
+            const countdown = document.getElementById('countdown');
+            countdown.innerText = countdownNumbers[currentIndex];
+            countdown.classList.remove('fade');
+            void countdown.offsetWidth; // Trigger reflow to reset animation
+            countdown.classList.add('fade');
+
+            currentIndex++;
+            setTimeout(displayNextNumber, 1000); // Move to the next number every second
+        }
+
+        displayNextNumber();
+    }
+
+    function startGame() {
+        // Hide the countdown and show the game screen
+        document.getElementById('countdown').style.visibility = 'hidden';
+        document.getElementById('countdown').style.pointerEvents = 'none';
         document.getElementById('game').style.visibility = 'visible';
         document.getElementById('game').style.pointerEvents = 'auto';
 
@@ -149,6 +203,14 @@
         // Hide the circle again to prevent issues for next game
         document.getElementById('circle').style.visibility = 'hidden';
         document.getElementById('circle').style.pointerEvents = 'none';
+    }
+
+    function returnToHome() {
+        // Hide result screen and show welcome screen again
+        document.getElementById('result').style.visibility = 'hidden';
+        document.getElementById('result').style.pointerEvents = 'none';
+        document.getElementById('welcome').style.visibility = 'visible';
+        document.getElementById('welcome').style.pointerEvents = 'auto';
     }
 </script>
 
