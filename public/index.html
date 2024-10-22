@@ -3,216 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aim Trainer</title>
+    <title>Brody Broz</title>
     <style>
-        /* Styling for the game */
+        /* General styling for page */
         body, html {
             margin: 0;
             padding: 0;
-            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        /* Main title section */
+        header {
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: Arial, sans-serif;
-            overflow: hidden; /* Prevent scrolling */
+            background-color: #ADD8E6; /* Light blue background */
         }
-        #welcome, #game, #result, #countdown {
+        header h1 {
+            font-size: 72px; /* Increased font size */
+            color: #005f5f; /* Dark teal blue */
             text-align: center;
-            width: 100%;
-            height: 100%;
+        }
+
+        /* Section with the iPad and arcade box */
+        section {
+            min-height: 100vh; /* Changed from height to min-height */
+            background-color: #053545;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            position: absolute;
-            visibility: hidden; /* Hidden by default */
-            pointer-events: none; /* Prevent interactions when hidden */
+            padding: 40px 20px; /* Added padding for better spacing */
         }
-        #welcome {
-            visibility: visible; /* Welcome screen visible initially */
-            pointer-events: auto;
+
+        /* iPad box styling */
+        .ipad-box {
+            display: flex;
+            width: 95%; /* Increased from 90% */
+            max-width: 1400px; /* Increased from 1200px */
+            height: 80vh; /* Changed to viewport height units */
+            min-height: 600px; /* Added minimum height */
+            border-radius: 30px;
+            background-color: black;
+            overflow: hidden;
         }
-        .play-button {
-            background-color: purple;
-            color: white;
-            padding: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            border: none;
-            border-radius: 10px;
+
+        /* Left side with game image */
+        .ipad-left {
+            flex: 1;
+            background: url('arcadeAtNight.png') no-repeat center;
+            background-size: cover;
+            background-position: center;
+            height: 100%;
         }
-        .circle {
-            position: absolute;
-            background-color: red;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            visibility: hidden; /* Hide the circle initially */
-            pointer-events: none; /* Prevent interaction when hidden */
-        }
-        #result {
-            font-size: 24px;
-        }
-        #result b {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-        #countdown {
-            font-size: 100px;
-            color: black;
-        }
-        .return-button {
+
+        /* Right side with arcade section */
+        .ipad-right {
+            flex: 1.5;
             background-color: black;
             color: white;
-            padding: 10px 20px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 40px; /* Increased padding */
+            padding-top: 30px;
+        }
+
+        .ipad-right h2 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+
+        .arcade-button {
+            background-color: #ADD8E6;
+            color: darkblue;
+            padding: 20px 40px;
             font-size: 20px;
-            cursor: pointer;
-            margin-top: 20px;
             border: none;
             border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+            align-self: flex-start;
         }
-        .fade {
-            animation: fadeout 1s forwards;
-        }
-        @keyframes fadeout {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
+
+        .arcade-button:hover {
+            background-color: navy;
         }
     </style>
 </head>
 <body>
 
-<!-- Welcome Screen -->
-<div id="welcome">
-    <button class="play-button" onclick="startCountdown()">Aim Trainer</button>
-</div>
+    <!-- Main Page with Title -->
+    <header>
+        <h1>Brody Broz</h1>
+    </header>
 
-<!-- Countdown Screen -->
-<div id="countdown"></div>
+    <!-- Section with iPad layout -->
+    <section>
+        <div class="ipad-box">
+            <div class="ipad-left"></div> <!-- Game image on left -->
+            <div class="ipad-right"> <!-- Arcade part on right -->
+                <h2>Arcade</h2>
+                <button class="arcade-button" onclick="startAimTrainer()">Aim Trainer</button>
+            </div>
+        </div>
+    </section>
 
-<!-- Game Screen -->
-<div id="game">
-    <div class="circle" id="circle"></div>
-</div>
-
-<!-- Result Screen -->
-<div id="result">
-    <b id="resultMessage"></b><br>
-    <span id="timeTaken"></span><br>
-    <button class="return-button" onclick="returnToHome()">Return to Home</button>
-</div>
-
-<script>
-    let clicks = 0;
-    let startTime;
-
-    function startCountdown() {
-        // Hide the welcome screen and show the countdown screen
-        document.getElementById('welcome').style.visibility = 'hidden';
-        document.getElementById('welcome').style.pointerEvents = 'none';
-        document.getElementById('countdown').style.visibility = 'visible';
-        document.getElementById('countdown').style.pointerEvents = 'auto';
-
-        let countdownNumbers = [3, 2, 1, "Go"];
-        let currentIndex = 0;
-
-        function displayNextNumber() {
-            if (currentIndex >= countdownNumbers.length) {
-                startGame(); // Start the game after the countdown
-                return;
-            }
-
-            const countdown = document.getElementById('countdown');
-            countdown.innerText = countdownNumbers[currentIndex];
-            countdown.classList.remove('fade');
-            void countdown.offsetWidth; // Trigger reflow to reset animation
-            countdown.classList.add('fade');
-
-            currentIndex++;
-            setTimeout(displayNextNumber, 1000); // Move to the next number every second
+    <script>
+        function startAimTrainer() {
+            window.location.href = 'aim-trainer.html';
         }
-
-        displayNextNumber();
-    }
-
-    function startGame() {
-        // Hide the countdown and show the game screen
-        document.getElementById('countdown').style.visibility = 'hidden';
-        document.getElementById('countdown').style.pointerEvents = 'none';
-        document.getElementById('game').style.visibility = 'visible';
-        document.getElementById('game').style.pointerEvents = 'auto';
-
-        clicks = 0; // Reset clicks for every game session
-        startTime = new Date();
-        showCircle(); // Now show the first circle
-    }
-
-    function showCircle() {
-        if (clicks >= 10) {
-            endGame();
-            return;
-        }
-
-        const circle = document.getElementById('circle');
-        const circleSize = 50; // Size of the circle in pixels
-        
-        // Get the actual visible window dimensions
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        
-        // Calculate maximum positions while keeping the circle fully visible
-        const maxX = viewportWidth - circleSize;
-        const maxY = viewportHeight - circleSize;
-        
-        // Generate random positions within the safe bounds
-        const x = Math.floor(Math.random() * maxX);
-        const y = Math.floor(Math.random() * maxY);
-        
-        circle.style.left = `${x}px`;
-        circle.style.top = `${y}px`;
-
-        // Make the circle visible and clickable
-        circle.style.visibility = 'visible';
-        circle.style.pointerEvents = 'auto';
-
-        circle.onclick = function() {
-            clicks++;
-            circle.style.visibility = 'hidden'; // Hide the current circle immediately after click
-            showCircle();
-        };
-    }
-
-    function endGame() {
-        const endTime = new Date();
-        const timeTaken = (endTime - startTime) / 1000; // in seconds
-
-        // Hide the game screen and show the result screen
-        document.getElementById('game').style.visibility = 'hidden';
-        document.getElementById('game').style.pointerEvents = 'none';
-        document.getElementById('result').style.visibility = 'visible';
-        document.getElementById('result').style.pointerEvents = 'auto';
-        
-        if (timeTaken < 8) {
-            document.getElementById('resultMessage').innerText = "ur aim pretty decent gng";
-        } else {
-            document.getElementById('resultMessage').innerText = "you slow af";
-        }
-        document.getElementById('timeTaken').innerText = `Time: ${timeTaken.toFixed(2)} seconds`;
-
-        // Hide the circle again to prevent issues for next game
-        document.getElementById('circle').style.visibility = 'hidden';
-        document.getElementById('circle').style.pointerEvents = 'none';
-    }
-
-    function returnToHome() {
-        // Hide result screen and show welcome screen again
-        document.getElementById('result').style.visibility = 'hidden';
-        document.getElementById('result').style.pointerEvents = 'none';
-        document.getElementById('welcome').style.visibility = 'visible';
-        document.getElementById('welcome').style.pointerEvents = 'auto';
-    }
-</script>
+    </script>
 
 </body>
 </html>

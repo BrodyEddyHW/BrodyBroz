@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aim Trainer</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            border: 2px solid #333;
+            background-color: #fff;
+        }
+
+        .target {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: red;
+            cursor: pointer;
+        }
+
+        .scoreboard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            font-weight: bold;
+            color: black;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .end-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .end-message {
+            font-size: 36px;
+            font-weight: bold;
+            color: black;
+            text-align: center;
+        }
+
+        .final-score {
+            font-size: 24px;
+            color: black;
+            text-align: center;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .game-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .game-button:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container" id="gameContainer">
+        <div class="scoreboard" id="scoreBoard">Score: 0</div>
+        <div class="timer" id="timer">Time: 10</div>
+        <div class="countdown" id="countdown">3</div>
+        <div class="end-screen" id="endScreen">
+            <div class="end-message" id="endMessage"></div>
+            <div class="final-score" id="finalScore"></div>
+            <div class="button-container">
+                <button class="game-button" onclick="startGame()">Play Again</button>
+                <button class="game-button" onclick="window.location.href='index.html'">Return to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameContainer = document.getElementById('gameContainer');
+        const scoreBoard = document.getElementById('scoreBoard');
+        const timerElement = document.getElementById('timer');
+        const countdownElement = document.getElementById('countdown');
+        const endScreen = document.getElementById('endScreen');
+        const endMessage = document.getElementById('endMessage');
+        const finalScore = document.getElementById('finalScore');
+
+        let score = 0;
+        let timeLeft = 10;
+        let gameInterval, timerInterval;
+
+        function createTarget() {
+            const target = document.createElement('div');
+            target.classList.add('target');
+
+            const x = Math.random() * (gameContainer.clientWidth - 50);
+            const y = Math.random() * (gameContainer.clientHeight - 50);
+
+            target.style.left = `${x}px`;
+            target.style.top = `${y}px`;
+
+            target.addEventListener('click', () => {
+                score++;
+                scoreBoard.textContent = `Score: ${score}`;
+                target.remove();
+                createTarget();
+            });
+
+            gameContainer.appendChild(target);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = `Time: ${timeLeft}`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function countdown(count) {
+            return new Promise(resolve => {
+                if (count > 0) {
+                    countdownElement.textContent = count;
+                    countdownElement.style.opacity = 1;
+                    
+                    setTimeout(() => {
+                        countdownElement.style.opacity = 0;
+                        setTimeout(() => countdown(count - 1).then(resolve), 500);
+                    }, 500);
+                } else {
+                    countdownElement.style.display = 'none';
+                    resolve();
+                }
+            });
+        }
+
+        async function startGame() {
+            // Reset and hide end screen
+            endScreen.style.display = 'none';
+            
+            // Reset game state
+            score = 0;
+            timeLeft = 10;
+            scoreBoard.textContent = `Score: ${score}`;
+            timerElement.textContent = `Time: ${timeLeft}`;
+            
+            // Show and reset countdown
+            countdownElement.style.display = 'block';
+            
+            // Start countdown
+            await countdown(3);
+            
+            // Start game
+            createTarget();
+            startTimer();
+        }
+
+        function endGame() {
+            const targets = document.querySelectorAll('.target');
+            targets.forEach(target => target.remove());
+
+            // Determine message based on score
+            let message;
+            if (score < 13) {
+                message = "damn ur slow";
+            } else if (score <= 16) {
+                message = "ur average";
+            } else {
+                message = "you have no life";
+            }
+
+            // Update end screen
+            endMessage.textContent = message;
+            finalScore.textContent = `Score: ${score}`;
+            endScreen.style.display = 'flex';
+        }
+
+        // Start the game when the page loads
+        window.onload = startGame;
+    </script>
+
+</body>
+</html>
