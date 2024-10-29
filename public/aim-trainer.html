@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aim Trainer</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
     <style>
         body, html {
             margin: 0;
@@ -29,7 +32,6 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background-color: red;
             cursor: pointer;
         }
 
@@ -90,6 +92,35 @@
             text-align: center;
         }
 
+        .leaderboard-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .leaderboard-input {
+            padding: 8px;
+            font-size: 16px;
+            width: 200px;
+        }
+
+        .leaderboard-container {
+            max-height: 200px;
+            overflow-y: auto;
+            width: 80%;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        .leaderboard-entry {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            font-size: 16px;
+        }
+
         .button-container {
             display: flex;
             gap: 20px;
@@ -109,17 +140,51 @@
         .game-button:hover {
             background-color: #333;
         }
+
+        .color-picker-container {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-picker {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
     </style>
 </head>
 <body>
-
     <div class="game-container" id="gameContainer">
         <div class="scoreboard" id="scoreBoard">Score: 0</div>
         <div class="timer" id="timer">Time: 10</div>
         <div class="countdown" id="countdown">3</div>
+        <div class="color-picker-container">
+            <label for="colorPicker">Target Color:</label>
+            <input type="color" class="color-picker" id="colorPicker" oninput="setTargetColor()">
+        </div>
         <div class="end-screen" id="endScreen">
             <div class="end-message" id="endMessage"></div>
             <div class="final-score" id="finalScore"></div>
+            <div class="leaderboard-form" id="leaderboardForm">
+                <input type="text" class="leaderboard-input" id="playerName" placeholder="Enter your name">
+                <div class="button-container">
+                    <button class="game-button" onclick="submitScore()">Submit Score</button>
+                    <button class="game-button" onclick="skipLeaderboard()">Skip</button>
+                </div>
+            </div>
+            <div class="leaderboard-container" id="leaderboardContainer">
+                <h3>Global Leaderboard</h3>
+                <div id="leaderboardEntries"></div>
+            </div>
             <div class="button-container">
                 <button class="game-button" onclick="startGame()">Play Again</button>
                 <button class="game-button" onclick="window.location.href='index.html'">Return to Home</button>
@@ -128,6 +193,22 @@
     </div>
 
     <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDFBTd-e3TAi7fiA_4FKJ_tHnl8ufUpakw",
+            authDomain: "brodybroz.firebaseapp.com",
+            projectId: "brodybroz",
+            storageBucket: "brodybroz.appspot.com",
+            messagingSenderId: "78687240901",
+            appId: "1:78687240901:web:cd298c7c926d9ac99e26ac",
+            measurementId: "G-1RWEXFW8R5"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const leaderboardRef = db.collection('atlb');
+
+        // Game variables
         const gameContainer = document.getElementById('gameContainer');
         const scoreBoard = document.getElementById('scoreBoard');
         const timerElement = document.getElementById('timer');
@@ -135,11 +216,88 @@
         const endScreen = document.getElementById('endScreen');
         const endMessage = document.getElementById('endMessage');
         const finalScore = document.getElementById('finalScore');
+        const leaderboardEntries = document.getElementById('leaderboardEntries');
+        const colorPicker = document.getElementById('colorPicker');
 
         let score = 0;
         let timeLeft = 10;
         let gameInterval, timerInterval;
+        let targetColor = getCookie('targetColor') || 'red';
 
+        // Leaderboard functions
+        function updateLeaderboardDisplay() {
+            // Get top 10 scores from Firebase
+            leaderboardRef.orderBy('score', 'desc').limit(10).get()
+                .then((querySnapshot) => {
+                    let leaderboardHTML = '';
+                    let rank = 1;
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        leaderboardHTML += `
+                            <div class="leaderboard-entry">
+                                ${rank}. ${data.name}: ${data.score}
+                            </div>
+                        `;
+                        rank++;
+                    });
+                    leaderboardEntries.innerHTML = leaderboardHTML;
+                })
+                .catch((error) => {
+                    console.error("Error getting leaderboard: ", error);
+                });
+        }
+
+        function submitScore() {
+            const playerName = document.getElementById('playerName').value.trim();
+            const submitButton = document.querySelector('button[onclick="submitScore()"]');
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.style.color = '#333';
+            feedbackDiv.style.marginTop = '10px';
+            feedbackDiv.style.textAlign = 'center';
+
+            if (!playerName) {
+                feedbackDiv.style.color = 'red';
+                feedbackDiv.textContent = 'Please enter your name';
+                document.getElementById('leaderboardForm').appendChild(feedbackDiv);
+                setTimeout(() => feedbackDiv.remove(), 3000);
+                return;
+            }
+
+            // Disable the submit button to prevent double submission
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+
+            // Add score to Firebase
+            leaderboardRef.add({
+                name: playerName,
+                score: score,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+                .then(() => {
+                    feedbackDiv.textContent = 'Score submitted successfully!';
+                    document.getElementById('leaderboardForm').appendChild(feedbackDiv);
+                    updateLeaderboardDisplay();
+                    setTimeout(() => {
+                        document.getElementById('leaderboardForm').style.display = 'none';
+                        feedbackDiv.remove();
+                    }, 2000);
+                })
+                .catch((error) => {
+                    console.error("Error adding score: ", error);
+                    feedbackDiv.style.color = 'red';
+                    feedbackDiv.textContent = 'Error submitting score. Please try again.';
+                    document.getElementById('leaderboardForm').appendChild(feedbackDiv);
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Submit Score';
+                    setTimeout(() => feedbackDiv.remove(), 3000);
+                });
+        }
+
+        function skipLeaderboard() {
+            document.getElementById('leaderboardForm').style.display = 'none';
+        }
+
+        // Game functions
         function createTarget() {
             const target = document.createElement('div');
             target.classList.add('target');
@@ -149,6 +307,7 @@
 
             target.style.left = `${x}px`;
             target.style.top = `${y}px`;
+            target.style.backgroundColor = targetColor;
 
             target.addEventListener('click', () => {
                 score++;
@@ -177,7 +336,7 @@
                 if (count > 0) {
                     countdownElement.textContent = count;
                     countdownElement.style.opacity = 1;
-                    
+
                     setTimeout(() => {
                         countdownElement.style.opacity = 0;
                         setTimeout(() => countdown(count - 1).then(resolve), 500);
@@ -189,23 +348,30 @@
             });
         }
 
+        function setTargetColor() {
+            targetColor = colorPicker.value;
+            setCookie('targetColor', targetColor, 365);
+            const targets = document.querySelectorAll('.target');
+            targets.forEach(target => {
+                target.style.backgroundColor = targetColor;
+            });
+        }
+
         async function startGame() {
-            // Reset and hide end screen
             endScreen.style.display = 'none';
-            
-            // Reset game state
+
             score = 0;
             timeLeft = 10;
             scoreBoard.textContent = `Score: ${score}`;
             timerElement.textContent = `Time: ${timeLeft}`;
-            
-            // Show and reset countdown
+
             countdownElement.style.display = 'block';
-            
-            // Start countdown
+
+            document.getElementById('playerName').value = '';
+            document.getElementById('leaderboardForm').style.display = 'flex';
+
             await countdown(3);
-            
-            // Start game
+
             createTarget();
             startTimer();
         }
@@ -214,7 +380,6 @@
             const targets = document.querySelectorAll('.target');
             targets.forEach(target => target.remove());
 
-            // Determine message based on score
             let message;
             if (score < 13) {
                 message = "damn ur slow";
@@ -224,15 +389,30 @@
                 message = "you have no life";
             }
 
-            // Update end screen
             endMessage.textContent = message;
             finalScore.textContent = `Score: ${score}`;
             endScreen.style.display = 'flex';
+
+            updateLeaderboardDisplay();
         }
 
-        // Start the game when the page loads
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = `expires=${date.toUTCString()}`;
+            document.cookie = `${name}=${value}; ${expires}; path=/`;
+        }
+
+        // Initialize leaderboard, set initial target color, and start game
+        updateLeaderboardDisplay();
+        colorPicker.value = targetColor;
         window.onload = startGame;
     </script>
-
 </body>
 </html>
